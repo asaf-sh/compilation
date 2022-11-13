@@ -1,2 +1,13 @@
 int a = 4;
 int b = 3;
+"aaaa"
+
+
+"aaa
+bbb"
+
+void
+
+"aaa\x20bbb"
+
+"aaa\nbbb"

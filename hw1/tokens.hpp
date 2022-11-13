@@ -32,7 +32,8 @@
     ID = 27,
     NUM = 28,
     STRING = 29,
-    ERR = 30
+    WHITESPACE = 30,
+    ERR = 31
   };
   extern int yylineno;
   extern char* yytext;

@@ -16,8 +16,7 @@ letter		([a-zA-Z])
 lf		(\n)
 cr		(\r)
 tab		(\t)
-
-
+space		(" ")
 
 
 
@@ -48,14 +47,15 @@ continue				return CONTINUE;
 =					return ASSIGN;
 ([=!<>]=)|[<>]				return RELOP;
 [\+\-\*\/]				return BINOP;
-\/\/.*					return COMMENT;
+\/\/[^\n\r]*				return COMMENT;
 
 
 
 {letter}({digit}|{letter})*		return ID;
-0|({nzdigit}{digit})*			return NUM;
+0|({nzdigit}{digit}*)			return NUM;
+\"(([\x20-\x7e]{-}[\\\"\n])|(\\[\\\"nr])|(\\x{digit}{digit}))*\"	        return STRING;
 
-
+({tab}|{space}|{lf}|{cr})		return WHITESPACE;
 
 .					return ERR;
 %%
