@@ -64,9 +64,10 @@ while(i<len-1){
 		int k=0;
 		switch (src[++i]){
 			case 'x':
-				for(;k+i<len-1; ++k)
+				for(k=0;k<3 && k+i<len-1; ++k)
 					seq[k] = src[i+k];
 				seq[k] = '\0';
+				printf("%s\n", seq);
 				if(len-i<4) return false;
 				try{
 					int ord = stoi(string(seq+1), 0, 16);
@@ -102,20 +103,26 @@ int main()
 {
 	int token;
 	while ((token = yylex())) {
-	  switch(token){
-		//case VOID : showToken("VOID"); break;
-		//case INT: showToken("INT"); break;
-		//case NUM: showToken("NUM"); break;
-		//case ID: showToken("ID"); break;
-		case ERR: printf("Error %s\n", yytext);exit(0); break;
-		case WHITESPACE: break;
-		case COMMENT: showToken(tokennames.find(token)->second, comment); break;
-		case STRING: char s[1024],err[4] ;
-			if(!handle_strings(s, yytext, err)){
+		switch(token){
+			//case VOID : showToken("VOID"); break;
+			//case INT: showToken("INT"); break;
+			//case NUM: showToken("NUM"); break;
+			//case ID: showToken("ID"); break;
+			case ERR: printf("Error %s\n", yytext);exit(0); break;
+			case WHITESPACE: break;
+			case COMMENT: showToken(tokennames.find(token)->second, comment); break;
+			case STRING: {char s[1024],err[4] ;
+			bool valid = handle_strings(s, yytext, err);
+			if(valid == false){
 				printf("Error undefined excape sequence %s\n", err);	
 		 		exit(0);	
 			}
-			showToken(tokennames.find(token)->second, s); break;
+			else{
+			//printf("in string, yytext=%s\n",yytext);
+			showToken(tokennames.find(token)->second, s);
+			}
+			break;
+}
 		case UNCLOSED_STRING: printf("Error unclosed string\n");exit(0); break;
 		default: showToken(tokennames.find(token)->second);
 		
