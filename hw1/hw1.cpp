@@ -31,6 +31,7 @@ map<int, const char*> tokennames = {
 {LPAREN, "LPAREN"},
 {RPAREN, "RPAREN"},
 {LBRACE, "LBRACE"},
+{RBRACE, "RBRACE"},
 {ASSIGN, "ASSIGN"},
 {RELOP, "RELOP"},
 {BINOP, "BINOP"},
