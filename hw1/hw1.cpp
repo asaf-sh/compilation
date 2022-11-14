@@ -52,7 +52,7 @@ char* string_slice(char* s, int from, int to){
 	return s;
 }
 
-bool handle_strings(char* dst, const char* src){
+bool handle_strings(char* dst, const char* src, char* seq){
 int j=0,i=1;
 int len = strlen(src);
 while(i<len-1){
@@ -60,27 +60,29 @@ while(i<len-1){
 		dst[j++] = src[i];
 	}
 	else{
-	
+		int k=0;
 		switch (src[++i]){
 			case 'x':
-				//bool valid = (len-i>3);
+				for(;k+i<len-1; ++k)
+					seq[k] = src[i+k];
+				seq[k] = '\0';
 				if(len-i<4) return false;
 				try{
-					int ord = stoi(string({src[i+1],src[i+2],'\0'}), 0, 16);
+					int ord = stoi(string(seq+1), 0, 16);
 					dst[j++] = char(ord);
 					i+= 2;
 				}
 				catch (invalid_argument const &ex){
-					printf("got invalid_argument\n");
 					return false;
 				}
 				break;
 			case 'n': dst[j++] = '\n'; break;
 			case 't': dst[j++] = '\t'; break;
 			case 'r': dst[j++] = '\r'; break;
-			case '0': dst[j++] = '\0';
+			case '0': dst[j++] = '\0'; break;
 			case '"': dst[j++] = '"'; break;
-			case '\\': dst[j++] = '\\';
+			case '\\': dst[j++] = '\\'; break;
+			default: seq[0] = src[i]; seq[1]='\0'; return false; break;
 		}
 	}
 	++i;
@@ -104,13 +106,16 @@ int main()
 		//case INT: showToken("INT"); break;
 		//case NUM: showToken("NUM"); break;
 		//case ID: showToken("ID"); break;
-		case ERR: printf("error\n"); break;
+		case ERR: printf("Error %s\n", yytext);exit(0); break;
 		case WHITESPACE: break;
 		case COMMENT: showToken(tokennames.find(token)->second, comment); break;
-		case STRING: char s[1024]; 
-			//strcpy(s, yytext);
-			if(!handle_strings(s, yytext)) exit(0);
+		case STRING: char s[1024],err[4] ;
+			if(!handle_strings(s, yytext, err)){
+				printf("Error undefined excape sequence %s\n", err);	
+		 		exit(0);	
+			}
 			showToken(tokennames.find(token)->second, s); break;
+		case UNCLOSED_STRING: printf("Error unclosed string\n");exit(0); break;
 		default: showToken(tokennames.find(token)->second);
 		
 	}
