@@ -53,7 +53,7 @@ continue				return CONTINUE;
 
 {letter}({digit}|{letter})*		return ID;
 0|({nzdigit}{digit}*)			return NUM;
-\"(([\x20-\x7e]{-}[\\\"\n])|(\\[\\\"nr])|(\\x{digit}{digit}))*\"	        return STRING;
+\"(([\x20-\x7e]{-}[\\\"\n])|(\\[\\\"nrt0])|(\\x({letter}|{digit}){2}))*\"	        return STRING;
 
 ({tab}|{space}|{lf}|{cr})		return WHITESPACE;
 

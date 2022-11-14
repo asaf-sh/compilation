@@ -4,7 +4,7 @@
 #include <unordered_set>
 #include <string>
 #include <cstring>
-#include <ctype>
+#include <ctype.h>
 
 
 using namespace std;
@@ -52,31 +52,41 @@ char* string_slice(char* s, int from, int to){
 	return s;
 }
 
-void handle_strings(char* dst, const char* src){
+bool handle_strings(char* dst, const char* src){
 int j=0,i=1;
 int len = strlen(src);
-while(i<strlen(text)-1){
-if (src[i]!='\\'){
-	dst[j++] = src[i++]
-	continue
-}
-else{
-	
-	switch (src[++i]){
-		case x:
-			bool valid = (len-i>3);if (!valid) return false;
-			valid = valid && src[i+1]
-			
-			
-			int ord = ((int)src[i+1])*10+(int)src[i+2];
-			valid = valid && ord>=0x20 && ord<=7e
-			int ord = (int)sr
-			
-	
+while(i<len-1){
+	if (src[i]!='\\'){
+		dst[j++] = src[i];
 	}
+	else{
+	
+		switch (src[++i]){
+			case 'x':
+				//bool valid = (len-i>3);
+				if(len-i<4) return false;
+				try{
+					int ord = stoi(string({src[i+1],src[i+2],'\0'}), 0, 16);
+					dst[j++] = char(ord);
+					i+= 2;
+				}
+				catch (invalid_argument const &ex){
+					printf("got invalid_argument\n");
+					return false;
+				}
+				break;
+			case 'n': dst[j++] = '\n'; break;
+			case 't': dst[j++] = '\t'; break;
+			case 'r': dst[j++] = '\r'; break;
+			case '0': dst[j++] = '\0';
+			case '"': dst[j++] = '"'; break;
+			case '\\': dst[j++] = '\\';
+		}
+	}
+	++i;
 }
-}
-}
+dst[j] = '\0';
+return true;
 }
 
 void showToken(const char* tokenname, char* value = NULL)
@@ -99,7 +109,7 @@ int main()
 		case COMMENT: showToken(tokennames.find(token)->second, comment); break;
 		case STRING: char s[1024]; 
 			//strcpy(s, yytext);
-			handle_strings(s, yytext); 
+			if(!handle_strings(s, yytext)) exit(0);
 			showToken(tokennames.find(token)->second, s); break;
 		default: showToken(tokennames.find(token)->second);
 		
