@@ -53,9 +53,10 @@ continue				return CONTINUE;
 
 {letter}({digit}|{letter})*		return ID;
 0|({nzdigit}{digit}*)			return NUM;
-\"[\x20-\x7e]*([\x20-\x7e]{-}[\\])\"	        return STRING;
+\"([\x20-\x7e]{-}[\"])*([\x20-\x7e]{-}[\\])\"	        return STRING;
 
-(\"[^\"\n]*\n)|(\"[^\"\n]*\\\"\n)				return UNCLOSED_STRING;
+
+(\"[^\"\n]*\n)|(\"[^\"\n]*\\\"\n)|(\"[^\"\n]*[^\x20-\x7e])				return UNCLOSED_STRING;
 
 ({tab}|{space}|{lf}|{cr})		return WHITESPACE;
 

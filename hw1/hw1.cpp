@@ -67,7 +67,7 @@ while(i<len-1){
 				for(k=0;k<3 && k+i<len-1; ++k)
 					seq[k] = src[i+k];
 				seq[k] = '\0';
-				printf("%s\n", seq);
+				//printf("%s\n", seq);
 				if(len-i<4) return false;
 				try{
 					int ord = stoi(string(seq+1), 0, 16);
@@ -114,7 +114,7 @@ int main()
 			case STRING: {char s[1024],err[4] ;
 			bool valid = handle_strings(s, yytext, err);
 			if(valid == false){
-				printf("Error undefined excape sequence %s\n", err);	
+				printf("Error undefined escape sequence %s\n", err);	
 		 		exit(0);	
 			}
 			else{
