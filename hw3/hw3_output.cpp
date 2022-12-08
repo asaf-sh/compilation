@@ -1,5 +1,9 @@
 #include <iostream>
+#include <string>
+
 #include "hw3_output.hpp"
+#include "tokens.hpp"
+#include <map>
 #include <sstream>
 
 using namespace std;
@@ -84,4 +88,30 @@ void output::errorMainMissing() {
 
 void output::errorByteTooLarge(int lineno, const string& value) {
     cout << "line " << lineno << ": byte value " << value << " out of range" << endl;
+}
+
+struct ScopeEntry{
+	string name, type;
+	int offset;	
+}
+
+class SymbolTable{
+	private:
+		map<ScopeEntry> symbols;
+	public:
+	SymbolTable SymbolTable(){
+	}
+	SymbolEntry get_symbol(string name){
+		auto found = symbols.find(name);
+		if (found != symbols.end())
+			return found.first;
+		else
+			return prev_scope == NULL : NULL ? prev_scope.get_symbol(name);		
+	}
+	void print_symbols(){
+		for(auto& [name, symbol] : symbols)
+			output::PrintId(symbol.name, symbol.offset, symbol.type);
+	}
+	
+
 }
