@@ -36,29 +36,23 @@ public:
             expression_ptr->setOffset(0);
         else
             expression_ptr->setOffset(this->max_offset);
-        this->max_offset++; //why to ++ if its function? maybe it need to be inside the else
+        this->max_offset++; //check the ++ if its function? maybe it need to be inside the else
         this->expressions.push_back(expression_ptr);
     }
     static void addFuncToSymbolTable(Type return_type, const string& id, int line_no, bool add_to_scope) {
         Program& program = Program::getInstance();
         if (program.isInGlobalScope(id)) {
-            //errorDef(line_num, id_name);
+            //error def
             //exit(0);
         }
         shared_ptr<Func> func_ptr = shared_ptr<Func>(new Func(return_type, id));
         program.addToGlobalScope(func_ptr);
         if (add_to_scope) {
             //Scope& curr_scope = program.scopes.back();
-            //curr_scope.func = f_ptr;
+            //curr_scope.func = func_ptr;
             //curr_scope.symbols.max_offset = 0;
         }
     }
-//    void print() {
-//        for (int i = 0; i < exp_ptrs.size(); i++) {
-//            ExpPtr e_ptr = exp_ptrs.at(i);
-//            std::cout << i << " - " << e_ptr->name << " : " << e_ptr->getTypeString() << std::endl;
-//        }
-//    }
 };
 
 #endif //COMPILATION_SYMBOLTABLE_H
