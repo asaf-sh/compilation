@@ -84,7 +84,6 @@ public:
 };
 
 
-
 class Func : public Expression {
     vector<shared_ptr<Expression>> args;
 public:
@@ -111,6 +110,12 @@ public:
             args_types_names.push_back(exp->getTypeAsString());
         }
         output::printID(name, offset, output::makeFunctionType(this->getTypeAsString(), args_types_names));
+    }
+
+    void printExpressionsOnly(){
+        for (auto & exp : args) {
+            exp->print();
+        }
     }
 };
 

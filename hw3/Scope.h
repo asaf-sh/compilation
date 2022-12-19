@@ -16,9 +16,10 @@ using namespace std;
 class Scope {
     SymbolTable sym_table;
     bool is_in_while = false;
-    //shared_ptr<hw3_utils::Func> func = nullptr;
+    shared_ptr<Func> function = nullptr;
 public:
     Scope& operator=(const Scope&) = delete;
+
     Scope(int offset, bool is_in_while) : is_in_while(is_in_while){
         this->symbols.max_offset = offset;
     }
@@ -27,11 +28,11 @@ public:
         if (this->sym_table.isExist(id)){
             return true;
         }
-        //hw3_utils::FuncPtr f_ptr = this->func;
-        //if (this->func == nullptr) {
-        //    return false;
-        //}
-        //return f_ptr->args[ID] != nullptr;
+;
+        if (this->function == nullptr) {
+            return false;
+        }
+        return this->function->getArgById(id) != nullptr;
     }
 
     shared_ptr<Expression> get(const string& id) {
@@ -41,6 +42,23 @@ public:
         }
         return exp;
     }
+
+    void setMaxOffsetOfSym(const int offset){
+        this->sym_table->setMaxOffset(offset);
+    }
+
+    int getMaxOffsetOfSym(){
+        return this->sym_table->getMaxOffset();
+    }
+
+    shared_ptr<Func> getFunc(){
+        return this->function;
+    }
+
+    void printSymTableExps(){
+        this->sym_table->print();
+    }
+
 };
 
 

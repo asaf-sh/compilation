@@ -1,7 +1,10 @@
 %{
 #include <iostream>
+#include <memory>
 #include "output.hpp"
 #include "Program.h"
+#include "SymbolTable.h"
+#include "Expression.h"
 using namespace std;
 using namespace output;
 
@@ -45,41 +48,45 @@ void yyerror(const char*);
 
 %%
 
-Program : {openGlobScope(yylineno);} Funcs
-          {checkIfMainExists();
-          closeGlobScope();}
+Program:    {openGlobScope(yylineno);}
+            Funcs {checkIfMainExists();
+                   closeGlobScope();}
 ;
-Funcs:  	{printProductionRule(2);} 
-			| FuncDecl Funcs {printProductionRule(3);}
+Funcs:  	FuncDecl Funcs {}
+            | {}
 ;
-FuncDecl:	RetType ID LPAREN Formals RPAREN LBRACE Statements RBRACE {printProductionRule(4);}
+FuncDecl:	RetType ID {openScope();}
+            {addFuncToSymbolTable($1->type, $2->name, yylineno);}
+            LPAREN Formals RPAREN LBRACE Statements RBRACE {closeScope();}
 ;
-RetType:	Type 		{printProductionRule(5);}
-			| VOID		{printProductionRule(6);}
+RetType:	Type 		{$$ = $1;}
+			| VOID		{$$ = shared_ptr<Expression>(new Expression(VOID));}
+            |           {yyerror("");}
 ;
-Formals:	FormalsList 	{printProductionRule(8);}
-			| {printProductionRule(7);}
+Formals:	{$$ = ExpPtr(new Expression());}
+            | FormalsList 	{$$ = $1;}
 ;			
-FormalsList: FormalDecl	{printProductionRule(9);}
-			| FormalDecl COMMA FormalsList	{printProductionRule(10);}
+FormalsList: FormalDecl	{}
+			| FormalDecl COMMA FormalsList	{}
 ;
-FormalDecl:	Type ID		{printProductionRule(11);}
+FormalDecl:	Type ID		{$$ = $2; $$->getType() = $1->getType(); addArgToFunc($2->name,$1->type, yylineno);}
 ;
-Statements: 	Statement	{printProductionRule(12);}
-				| Statements Statement	{printProductionRule(13);}
+Statements: 	Statement	{}
+				| Statements Statement	{}
 ;				
-Statement:	LBRACE Statements RBRACE	{printProductionRule(14);}
-			|Type ID SC					{printProductionRule(15);}
-			|Type ID ASSIGN Exp SC		{printProductionRule(16);}
-			|ID ASSIGN Exp SC			{printProductionRule(17);}
-			|Call SC					{printProductionRule(18);}
-			|RETURN SC					{printProductionRule(19);}
-			|RETURN Exp SC				{printProductionRule(20);}
-			|IF LPAREN Exp RPAREN Statement		{printProductionRule(21);}
-			|IF LPAREN Exp RPAREN Statement ELSE Statement		{printProductionRule(22);}
-			|WHILE LPAREN Exp RPAREN Statement					{printProductionRule(23);}
-			|BREAK SC											{printProductionRule(24);}
-			|CONTINUE SC										{printProductionRule(25);}
+Statement:	LBRACE {openScope();} Statements RBRACE	{closeScope();}
+			|Type ID SC					{checkNewID($2->getName(), yylineno); addVars($1->getType(), $2->getName());}
+			|Type ID ASSIGN Exp SC		{checkNewID($2->getName(), yylineno); checkValidDefAndAssign($1->getType(), $4->getType(), yylineno); addVars($1->getType(), $2->getName());}
+			|ID ASSIGN Exp SC			{$1=checkIdExistAndReturnId($1, yylineno); checkValidDefAndAssign($1->getType(), $3->getType(), yylineno);}
+			|Call SC					{}
+			|RETURN SC					{checkIsInVoidScope(yylineno);}
+			|RETURN Exp SC				{checkRetType($2->getType(), yylineno);}
+			|IF LPAREN MarkerOpenScope Exp MarkerCheckBool RPAREN Statement	{closeScope();}
+			|IF LPAREN MarkerOpenScope Exp MarkerCheckBool RPAREN Statement MarkerCloseScope
+			 ELSE MarkerOpenScope Statement		{closeScope();}
+			|WHILE LPAREN MarkerOpenWhileScope Exp MarkerCheckBool RPAREN Statement	{closeScope();}				{printProductionRule(23);}
+			|BREAK SC					{checkIsWhileScope(true, yylineno);}
+			|CONTINUE SC				{checkIsWhileScope(false, yylineno);}
 ;
 Call:		ID LPAREN ExpList RPAREN	{printProductionRule(26);}
 			|ID LPAREN RPAREN			{printProductionRule(27);}
@@ -107,6 +114,21 @@ Exp:		LPAREN Exp RPAREN		{printProductionRule(33);}
 			|Exp RELOP Exp			{printProductionRule(45);}
 			|LPAREN Type RPAREN Exp	{printProductionRule(46);}
 ;
+
+
+MarkerOpenScope: {openScope();}
+;
+
+MarkerCloseScope: {closeScope();}
+;
+
+MarkerCheckBool:  {checkBool($0, yylineno);}
+;
+
+MarkerOpenWhileScope: {openScope(true);}
+;
+
+
 %%
 
 void yyerror(const char*){ errorSyn(yylineno);}	

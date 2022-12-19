@@ -51,6 +51,38 @@ public:
         program.global_scope.printFuncs();
     }
 
+    static void openScope(bool is_in_while) {
+        Program& program = getInstance();
+        if (program.scopes.size() == 0) {
+            program.scopes.emplace_back(0, is_in_while);
+            return;
+        }
+        Scope& scope = program.scopes.back();
+        program.scopes.emplace_back(scope.getMaxOffsetOfSym(), is_in_while);
+    }
+
+    static void closeScope() {
+        Program& program = getInstance();
+        output::endScope();
+        shared_ptr<Func> func = program.scopes.back().getFunc();
+        if (func) {
+            func->printExpressionsOnly();
+        }
+        program.scopes.back().printSymTableExps();
+        program.scopes.pop_back();
+    }
+
+    static void addArgToFunc(string name, Type type, int line_no){
+        Program &program = Program::getInstance();
+        if(this->getExpById(name)) {
+            //error def
+        }
+        shared_ptr<Expression> arg = shared_ptr<Expression>(new Expression(name,type));
+        shared_ptr<Func> func = program.global_scope->getLastFunc();
+        arg->setOffset((func->getArgsSize()+1)*(-1));
+        func->addArg(arg);
+    }
+
     shared_ptr<Expression> getExpById(const string& id) {
         for (auto& scope : scopes) {
             if (scope.isInScope(id)){
@@ -68,18 +100,9 @@ public:
         this->global_scope->addFunc(func_ptr);
     }
 
-    void addArgToFunc(string name, Type type, int line_no){
-        Program &program = Program::getInstance();
-        if(this->getExpById(name)) {
-            //error def
-        }
-        shared_ptr<Expression> arg = shared_ptr<Expression>(new Expression(name,type));
-        shared_ptr<Func> func = program.global_scope->getLastFunc();
-        arg->setOffset(func->getArgsSize()*(-1));
-        func->addArg(arg);
-
+    Scope& getLastScope(){
+        return this->scopes.back();
     }
-
 };
 
 #endif //COMPILATION_PROGRAM_H

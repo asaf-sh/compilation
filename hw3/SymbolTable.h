@@ -19,9 +19,11 @@ class SymbolTable {
     vector<shared_ptr<Expression>> expressions;
 public:
     SymbolTable& operator=(const SymbolTable&) = delete;
+
     bool isExist(const string& id){
         return this->table[id] != nullptr;
     }
+
     shared_ptr<Expression> get(const string& id) {
         for (auto const &exp : this->expressions) {
             if (exp->name == id){
@@ -30,6 +32,7 @@ public:
         }
         return nullptr;
     }
+
     void insert(const shared_ptr<Expression>& expression_ptr){
         //func offset always zero
         if (expression_ptr->isFunc())
@@ -39,6 +42,21 @@ public:
         this->max_offset++; //check the ++ if its function? maybe it need to be inside the else
         this->expressions.push_back(expression_ptr);
     }
+
+    void setMaxOffset(const int offset){
+        this->max_offset = offset;
+    }
+
+    int getMaxOffset(){
+        return this->max_offset;
+    }
+
+    void print(){
+        for (auto const& exp : expressions) {
+            exp->print();
+        }
+    }
+
     static void addFuncToSymbolTable(Type return_type, const string& id, int line_no, bool add_to_scope) {
         Program& program = Program::getInstance();
         if (program.isInGlobalScope(id)) {
@@ -48,9 +66,9 @@ public:
         shared_ptr<Func> func_ptr = shared_ptr<Func>(new Func(return_type, id));
         program.addToGlobalScope(func_ptr);
         if (add_to_scope) {
-            //Scope& curr_scope = program.scopes.back();
-            //curr_scope.func = func_ptr;
-            //curr_scope.symbols.max_offset = 0;
+            Scope& curr_scope = program.getLastScope();
+            curr_scope.setFunc(func_ptr);
+            curr_scope.setMaxOffsetOfSym(0);symbols.max_offset = 0;
         }
     }
 };
