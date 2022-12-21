@@ -5,6 +5,10 @@
 #include <string>
 using namespace std;
 
+#include <memory>
+
+
+
 namespace output{
     void endScope();
     void printID(const string& id, int offset, const string& type);

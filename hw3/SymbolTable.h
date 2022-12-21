@@ -9,24 +9,28 @@
 #include <vector>
 #include <string>
 #include "Expression.h"
-#include "Program.h"
-
 
 using namespace std;
 
 class SymbolTable {
+private:
     int max_offset;
     vector<shared_ptr<Expression>> expressions;
 public:
     SymbolTable& operator=(const SymbolTable&) = delete;
 
     bool isExist(const string& id){
-        return this->table[id] != nullptr;
+        for (auto const &exp : this->expressions) {
+            if (exp->getName() == id){
+                return true;
+            }
+        }
+        return false;
     }
 
     shared_ptr<Expression> get(const string& id) {
         for (auto const &exp : this->expressions) {
-            if (exp->name == id){
+            if (exp->getName() == id){
                 return exp;
             }
         }
@@ -57,20 +61,6 @@ public:
         }
     }
 
-    static void addFuncToSymbolTable(Type return_type, const string& id, int line_no, bool add_to_scope) {
-        Program& program = Program::getInstance();
-        if (program.isInGlobalScope(id)) {
-            //error def
-            //exit(0);
-        }
-        shared_ptr<Func> func_ptr = shared_ptr<Func>(new Func(return_type, id));
-        program.addToGlobalScope(func_ptr);
-        if (add_to_scope) {
-            Scope& curr_scope = program.getLastScope();
-            curr_scope.setFunc(func_ptr);
-            curr_scope.setMaxOffsetOfSym(0);symbols.max_offset = 0;
-        }
-    }
 };
 
 #endif //COMPILATION_SYMBOLTABLE_H

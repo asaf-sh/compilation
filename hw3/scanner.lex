@@ -1,6 +1,6 @@
 %{
 //#include "tokens.hpp"
-#include "output.hpp"
+#include "hw3_output.hpp"
 #include "parser.tab.hpp"
 using namespace output;
 

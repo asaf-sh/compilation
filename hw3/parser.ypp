@@ -1,14 +1,36 @@
 %{
 #include <iostream>
 #include <memory>
-#include "output.hpp"
+#include "hw3_output.hpp"
 #include "Program.h"
-#include "SymbolTable.h"
-#include "Expression.h"
 using namespace std;
 using namespace output;
+using ProgramFunctions::checkIfMainExists;
+using ProgramFunctions::addFuncToSymbolTable;
+using ProgramFunctions::openGlobalScope;
+using ProgramFunctions::closeGlobalScope;
+using ProgramFunctions::openScope;
+using ProgramFunctions::closeScope;
+using ProgramFunctions::addArgToFunc;
+using ProgramFunctions::getExpById;
+using ProgramFunctions::addToScope;
+using ProgramFunctions::wrongFuncArgs;
+using ProgramFunctions::funcCallHandler;
+using ProgramFunctions::addArgForFuncCall;
+using ProgramFunctions::selectType;
+using ProgramFunctions::checkIfIdAlreadyExist;
+using ProgramFunctions::checkType;
+using ProgramFunctions::checkSameType;
+using ProgramFunctions::checkIdAndReturn;
+using ProgramFunctions::checkIsInVoidScope;
+using ProgramFunctions::checkRetType;
+using ProgramFunctions::checkIsWhileScope;
+using ProgramFunctions::checkValidByte;
+using ProgramFunctions::checkBool;
+using ProgramFunctions::checkCast;
 
-//#define YYSTYPE Node*
+
+#define YYSTYPE shared_ptr<Expression>
 int yylex();
 extern int yylineno;
 void yyerror(const char*);
@@ -48,86 +70,82 @@ void yyerror(const char*);
 
 %%
 
-Program:    {openGlobScope(yylineno);}
+Program:    {openGlobalScope(yylineno);}
             Funcs {checkIfMainExists();
-                   closeGlobScope();}
+                   closeGlobalScope();}
 ;
 Funcs:  	FuncDecl Funcs {}
             | {}
 ;
 FuncDecl:	RetType ID {openScope();}
-            {addFuncToSymbolTable($1->type, $2->name, yylineno);}
+            {addFuncToSymbolTable($1->getType(), $2->getName(), yylineno);}
             LPAREN Formals RPAREN LBRACE Statements RBRACE {closeScope();}
 ;
 RetType:	Type 		{$$ = $1;}
-			| VOID		{$$ = shared_ptr<Expression>(new Expression(VOID));}
+			| VOID		{$$ = shared_ptr<Expression>(new Expression(Ex3_type::VOID));}
             |           {yyerror("");}
 ;
-Formals:	{$$ = ExpPtr(new Expression());}
+Formals:	{$$ = shared_ptr<Expression>(new Expression());}
             | FormalsList 	{$$ = $1;}
 ;			
 FormalsList: FormalDecl	{}
 			| FormalDecl COMMA FormalsList	{}
 ;
-FormalDecl:	Type ID		{$$ = $2; $$->getType() = $1->getType(); addArgToFunc($2->name,$1->type, yylineno);}
+FormalDecl:	Type ID		{$$ = $2; $$->setType($1->getType()); addArgToFunc($2->getName(),$1->getType(), yylineno);}
 ;
 Statements: 	Statement	{}
 				| Statements Statement	{}
-;				
-Statement:	LBRACE {openScope();} Statements RBRACE	{closeScope();}
-			|Type ID SC					{checkNewID($2->getName(), yylineno); addVars($1->getType(), $2->getName());}
-			|Type ID ASSIGN Exp SC		{checkNewID($2->getName(), yylineno); checkValidDefAndAssign($1->getType(), $4->getType(), yylineno); addVars($1->getType(), $2->getName());}
-			|ID ASSIGN Exp SC			{$1=checkIdExistAndReturnId($1, yylineno); checkValidDefAndAssign($1->getType(), $3->getType(), yylineno);}
-			|Call SC					{}
-			|RETURN SC					{checkIsInVoidScope(yylineno);}
-			|RETURN Exp SC				{checkRetType($2->getType(), yylineno);}
-			|IF LPAREN MarkerOpenScope Exp MarkerCheckBool RPAREN Statement	{closeScope();}
-			|IF LPAREN MarkerOpenScope Exp MarkerCheckBool RPAREN Statement MarkerCloseScope
-			 ELSE MarkerOpenScope Statement		{closeScope();}
-			|WHILE LPAREN MarkerOpenWhileScope Exp MarkerCheckBool RPAREN Statement	{closeScope();}				{printProductionRule(23);}
-			|BREAK SC					{checkIsWhileScope(true, yylineno);}
-			|CONTINUE SC				{checkIsWhileScope(false, yylineno);}
 ;
-Call:		ID LPAREN ExpList RPAREN	{printProductionRule(26);}
-			|ID LPAREN RPAREN			{printProductionRule(27);}
+Statement: OpenStatement
+           |MatchedStatement
 ;
-ExpList:	Exp						{printProductionRule(28);}
-			|Exp COMMA ExpList		{printProductionRule(29);}
+OpenStatement:  IF LPAREN {openScope();} Exp {checkBool($0, yylineno);} RPAREN Statement  {closeScope();}
+                |IF LPAREN {openScope();} Exp {checkBool($0, yylineno);} RPAREN MatchedStatement {closeScope();}
+                 ELSE {openScope();} OpenStatement	{closeScope();}
+                |WHILE LPAREN {openScope(true);} Exp {checkBool($0, yylineno);} RPAREN OpenStatement {closeScope();}
+;
+MatchedStatement:   BasicStatement
+                    |IF LPAREN {openScope();} Exp {checkBool($0, yylineno);} RPAREN MatchedStatement {openScope();}
+                     ELSE {openScope();} MatchedStatement	 {closeScope();}
+                    |WHILE LPAREN {openScope(true);} Exp {checkBool($0, yylineno);} RPAREN MatchedStatement	{closeScope();}
+;
+
+BasicStatement:	LBRACE {openScope();} Statements RBRACE	{closeScope();}
+                |Type ID SC					{checkIfIdAlreadyExist($2->getName(), yylineno); addToScope($1->getType(), $2->getName());}
+                |Type ID ASSIGN Exp SC		{checkIfIdAlreadyExist($2->getName(), yylineno); checkType($1->getType(), $4->getType(), yylineno); addToScope($1->getType(), $2->getName());}
+                |ID ASSIGN Exp SC			{$1=checkIdAndReturn($1->getName(), yylineno); checkType($1->getType(), $3->getType(), yylineno);}
+                |Call SC					{}
+                |RETURN SC					{checkIsInVoidScope(yylineno);}
+                |RETURN Exp SC				{checkRetType($2->getType(), yylineno);}
+                |BREAK SC					{checkIsWhileScope(true, yylineno);}
+                |CONTINUE SC				{checkIsWhileScope(false, yylineno);}
+;
+Call:		ID LPAREN ExpList RPAREN	{$$ = funcCallHandler($1->getName(), yylineno);}
+			|ID LPAREN RPAREN			{$$ = funcCallHandler($1->getName(), yylineno);}
+;
+ExpList:	Exp						{addArgForFuncCall($1);}
+			|Exp COMMA ExpList		{addArgForFuncCall($1);} //make sure
 ;			
-Type:		INT						{printProductionRule(30);}
-			|BYTE					{printProductionRule(31);}
-			|BOOL					{printProductionRule(32);}
+Type:		INT						{shared_ptr<Expression>(new Expression(Ex3_type::INT));}
+			|BYTE					{shared_ptr<Expression>(new Expression(Ex3_type::BYTE));}
+			|BOOL					{shared_ptr<Expression>(new Expression(Ex3_type::BOOL));}
 ;
-Exp:		LPAREN Exp RPAREN		{printProductionRule(33);}
-			|Exp ADDITIVE Exp		{printProductionRule(34);}
-			|Exp MULTIPLICATIVE Exp	{printProductionRule(34);}
-			|ID						{printProductionRule(35);}
-			|Call					{printProductionRule(36);}
-			|NUM					{printProductionRule(37);}
-			|NUM B					{printProductionRule(38);}
-			|STRING					{printProductionRule(39);}
-			|TRUE					{printProductionRule(40);}
-			|FALSE					{printProductionRule(41);}
-			|NOT Exp				{printProductionRule(42);}
-			|Exp AND Exp			{printProductionRule(43);}
-			|Exp OR Exp				{printProductionRule(44);}
-			|Exp RELOP Exp			{printProductionRule(45);}
-			|LPAREN Type RPAREN Exp	{printProductionRule(46);}
+Exp:		LPAREN Exp RPAREN		{$$ = $2;}
+			|Exp ADDITIVE Exp		{checkSameType($1->getType(), Ex3_type::INT, yylineno); checkSameType($3->getType(), Ex3_type::INT, yylineno); $$ = selectType($1->getType(), $3->getType());}
+			|Exp MULTIPLICATIVE Exp	{checkSameType($1->getType(), Ex3_type::INT, yylineno); checkSameType($3->getType(), Ex3_type::INT, yylineno); $$ = selectType($1->getType(), $3->getType());}
+			|ID						{$$ = checkIdAndReturn($1->getName(), yylineno);}
+			|Call					{$$ = $1;}
+			|NUM					{$$ = shared_ptr<Expression>(new Expression(Ex3_type::INT)); $$->getName() = $1->getName();}
+			|NUM B					{checkValidByte($1, yylineno); $$ = shared_ptr<Expression>(new Expression(Ex3_type::BYTE)); $$->getName() = $1->getName();}
+			|STRING					{$$ = shared_ptr<Expression>(new Expression(Ex3_type::STRING)); $$->getName() = $1->getName();}
+			|TRUE					{$$ = shared_ptr<Expression>(new Expression(Ex3_type::BOOL)); $$->getName() = $1->getName();}
+			|FALSE					{$$ = shared_ptr<Expression>(new Expression(Ex3_type::BOOL)); $$->getName() = $1->getName();}
+			|NOT Exp				{checkBool($2, yylineno); $$ = shared_ptr<Expression>(new Expression(Ex3_type::BOOL));}
+			|Exp AND Exp			{checkBool($1, yylineno); checkBool($3, yylineno); $$ = shared_ptr<Expression>(new Expression(Ex3_type::BOOL));}
+			|Exp OR Exp				{checkBool($1, yylineno); checkBool($3, yylineno); $$ = shared_ptr<Expression>(new Expression(Ex3_type::BOOL));}
+			|Exp RELOP Exp			{checkSameType($1->getType(),Ex3_type::INT, yylineno); checkSameType($3->getType(), Ex3_type::INT, yylineno); $$ = shared_ptr<Expression>(new Expression(Ex3_type::BOOL));}
+			|LPAREN Type RPAREN Exp	{checkCast($2->getType(), $4->getType(), yylineno); $$->setType($2->getType());}
 ;
-
-
-MarkerOpenScope: {openScope();}
-;
-
-MarkerCloseScope: {closeScope();}
-;
-
-MarkerCheckBool:  {checkBool($0, yylineno);}
-;
-
-MarkerOpenWhileScope: {openScope(true);}
-;
-
 
 %%
 

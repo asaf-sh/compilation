@@ -7,30 +7,34 @@
 
 #include <memory>
 #include <vector>
+#include <string>
+#include "hw3_output.hpp"
 using namespace std;
 
-enum Type {
-    INT, BYTE, NUM, VOID, BOOL, STRING, NONE
-};
+namespace Ex3_type {
+    enum Type {
+        INT, BYTE, NUM, VOID, BOOL, STRING, NONE
+    };
+}
 
 class Expression {
 protected:
     string name;
     int offset;
     bool is_func;
-    Type type;
+    Ex3_type::Type type;
 public:
     Expression(): name(""),offset(0),is_func(false){}
 
-    Expression(string name, Type type){
-        name.copy(this->name, name.size());
+    Expression(string name, Ex3_type::Type type){
+        this->name= name;
         this->type = type;
     }
 
-    explicit Expression(Type type) : type(type) {}
+    explicit Expression(Ex3_type::Type type) : type(type) {}
 
     explicit Expression(string name) {
-        name.copy(this->name, name.size());
+        this->name= name;
     }
 
     bool isFunc(){
@@ -45,36 +49,32 @@ public:
         return this->name;
     }
 
-    Type getType(){
+    Ex3_type::Type getType(){
         return this->type;
+    }
+
+    void setType(Ex3_type::Type type){
+        this->type = type;
     }
 
     string getTypeAsString() const {
         switch (this->type) {
-            case INT:
+            case Ex3_type::INT:
                 return "INT";
-                break;
-            case BYTE:
+            case Ex3_type::BYTE:
                 return "BYTE";
-                break;
-            case NUM:
+            case Ex3_type::NUM:
                 return "NUM";
-                break;
-            case VOID:
+            case Ex3_type::VOID:
                 return "VOID";
-                break;
-            case BOOL:
+            case Ex3_type::BOOL:
                 return "BOOL";
-                break;
-            case STRING:
+            case Ex3_type::STRING:
                 return "STRING";
-                break;
-            case NONE:
+            case Ex3_type::NONE:
                 return "NONE";
-                break;
             default:
                 return "ERROR";
-                break;
         }
     }
 
@@ -85,21 +85,33 @@ public:
 
 
 class Func : public Expression {
+private:
     vector<shared_ptr<Expression>> args;
 public:
-    Func(Type ret_type, string id) : Expression(id, ret_type) {
+    Func(Ex3_type::Type ret_type, string id) : Expression(id, ret_type) {
         this->is_func = true;
         this->offset = 0;
     }
+
     shared_ptr<Expression> getArgById(const string id){
         for (auto const &arg : this->args) {
-            if (arg->name == id) return arg;
+            if (arg->getName() == id) return arg;
         }
         return nullptr;
     }
+
     int getArgsSize(){
         return args.size();
     }
+
+    vector<shared_ptr<Expression>> getArgs(){
+        return this->args;
+    }
+
+    shared_ptr<Expression> getArgByIndex(int i){
+        return args[i];
+    }
+
     void addArg(shared_ptr<Expression> arg){
         this->args.push_back(arg);
     }
